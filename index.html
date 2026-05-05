@@ -200,6 +200,8 @@
 
     let carrinho = [];
     let editandoId = null;
+    let chartP = null;
+    let chartF = null;
 
     window.sair = function() { sessionStorage.clear(); window.location.href = 'login.html'; }
 
@@ -213,6 +215,7 @@
         }
         if(tabId === 'vendas') { setTimeout(() => { document.getElementById('pdv-busca').focus(); }, 100); }
         if(tabId === 'estoque') carregarInventario();
+        if(tabId === 'dashboard') carregarDash();
     }
 
     document.getElementById('pdv-busca').addEventListener('keypress', async (e) => {
@@ -311,7 +314,6 @@
             for(const item of carrinho) {
                 await updateDoc(doc(db, "produtos", item.id), { estoque: increment(-1) });
             }
-            
             imprimirCupom(dadosVenda);
             limparPdv();
         } catch (e) { alert("Erro: " + e.message); }
@@ -332,6 +334,7 @@
     window.carregarInventario = async function() {
         const snap = await getDocs(collection(db, "produtos"));
         let html = '';
+        let selectProd = '<option value="todos">Todos os Produtos</option>';
         snap.forEach(d => {
             const p = d.data();
             html += `<tr><td>${p.codigo}</td><td>${p.nome}</td><td>${p.categoria || '-'}</td><td>R$ ${parseFloat(p.preco_venda).toFixed(2).replace('.',',')}</td><td>${p.estoque}</td>
@@ -339,8 +342,75 @@
                 <button class='btn btn-warning btn-sm' onclick='editar("${d.id}", ${JSON.stringify(p)})'>✏️</button>
                 <button class='btn btn-danger btn-sm' onclick='excluirProduto("${d.id}")'>🗑️</button>
             </td></tr>`;
+            selectProd += `<option value="${p.nome}">${p.nome}</option>`;
         });
         document.querySelector('#tabela-inventario').innerHTML = html;
+        document.getElementById('dash-filtro-produto').innerHTML = selectProd;
+    }
+
+    window.carregarDash = async function() {
+        const dIni = document.getElementById('data-inicio').value;
+        const dFim = document.getElementById('data-fim').value;
+        const fProd = document.getElementById('dash-filtro-produto').value;
+        const fMet = document.getElementById('dash-filtro-pagamento').value;
+
+        // Atualização dos Alertas de Estoque Baixo (<= 5)
+        const snapProd = await getDocs(collection(db, "produtos"));
+        let alertas = '';
+        snapProd.forEach(doc => {
+            const p = doc.data();
+            if(p.estoque <= 5) alertas += `<li style="color:red; font-weight:bold;">⚠️ ${p.nome}: ${p.estoque} un</li>`;
+        });
+        document.getElementById('dash-alertas').innerHTML = alertas;
+
+        const snapV = await getDocs(collection(db, "vendas"));
+        let fat = 0, qtdHoje = 0;
+        const hj = new Date().toLocaleDateString();
+        const dadosProd = {}, dadosFin = { Dinheiro: 0, Pix: 0, Débito: 0, Crédito: 0 };
+
+        // Preparação das datas de filtro
+        const dataInicioFiltro = dIni ? new Date(dIni + "T00:00:00") : null;
+        const dataFimFiltro = dFim ? new Date(dFim + "T23:59:59") : null;
+
+        snapV.forEach(d => {
+            const v = d.data();
+            const dataV = new Date(v.data);
+            
+            // Lógica do Filtro de Datas
+            if(dataInicioFiltro && dataV < dataInicioFiltro) return;
+            if(dataFimFiltro && dataV > dataFimFiltro) return;
+            
+            if(fMet !== 'todos' && v.metodo !== fMet) return;
+
+            let vendaValida = false;
+            v.itens.forEach(i => {
+                if(fProd === 'todos' || i.nome === fProd) {
+                    vendaValida = true;
+                    dadosProd[i.nome] = (dadosProd[i.nome] || 0) + 1;
+                }
+            });
+
+            if(vendaValida) {
+                fat += v.total;
+                dadosFin[v.metodo] += v.total;
+                if(dataV.toLocaleDateString() === hj) qtdHoje++;
+            }
+        });
+
+        document.getElementById('dash-fatur').innerText = `R$ ${fat.toFixed(2).replace('.',',')}`;
+        document.getElementById('dash-hoje').innerText = qtdHoje;
+
+        if(chartP) chartP.destroy();
+        chartP = new Chart(document.getElementById('chartProdutos'), {
+            type: 'bar',
+            data: { labels: Object.keys(dadosProd), datasets: [{ label: 'Vendas por Produto', data: Object.values(dadosProd), backgroundColor: '#3498db' }] }
+        });
+
+        if(chartF) chartF.destroy();
+        chartF = new Chart(document.getElementById('chartFinanceiro'), {
+            type: 'pie',
+            data: { labels: Object.keys(dadosFin), datasets: [{ data: Object.values(dadosFin), backgroundColor: ['#27ae60', '#f39c12', '#2c3e50', '#e74c3c'] }] }
+        });
     }
 
     window.excluirProduto = async function(id) {
@@ -372,7 +442,6 @@
     window.salvarEstoque = async function() {
         const cod = document.getElementById('est-codigo').value.trim();
         if(!cod) return alert("Código é obrigatório!");
-
         const p = { 
             codigo: cod, 
             nome: document.getElementById('est-nome').value,
@@ -381,9 +450,7 @@
             preco_venda: parseFloat(document.getElementById('est-venda').value) || 0, 
             estoque: parseInt(document.getElementById('est-qtd').value) || 0 
         };
-
         try {
-            // Salva usando o código como ID do documento
             await setDoc(doc(db, "produtos", cod), p);
             cancelarEdicao();
             carregarInventario();
@@ -425,7 +492,6 @@
     const nome = sessionStorage.getItem('nomeUsuario') || 'Usuário';
     document.getElementById('info-usuario').innerText = nome;
     window.verificarDinheiro();
-
 </script>
 
 <script>
