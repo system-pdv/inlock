@@ -145,7 +145,13 @@
             </div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
-            <div class="card"><h4>Faturamento</h4><h2 id="dash-fatur">R$ 0,00</h2></div>
+            <div class="card">
+                <h4>Resumo Financeiro</h4>
+                <p>Custo Total: <span id="dash-custo-total" style="font-weight: bold; color: var(--danger);">R$ 0,00</span></p>
+                <p>Venda Total: <span id="dash-fatur" style="font-weight: bold; color: var(--success);">R$ 0,00</span></p>
+                <hr>
+                <p>Lucro Estimado: <span id="dash-lucro" style="font-weight: bold; font-size: 1.2em; color: var(--accent);">R$ 0,00</span></p>
+            </div>
             <div class="card"><h4>Vendas Hoje</h4><h2 id="dash-hoje">0</h2></div>
             <div class="card"><h4>Estoque Baixo</h4><ul id="dash-alertas"></ul></div>
         </div>
@@ -333,7 +339,7 @@
 
         divCupom.innerHTML =
             `--------------------------------\n` +
-            `         MINI MERCADO           \n` +
+            `          MINI MERCADO           \n` +
             `--------------------------------\n` +
             `Data: ${new Date().toLocaleString()}\n` +
             `--------------------------------\n` +
@@ -413,16 +419,19 @@
         const fProd = document.getElementById('dash-filtro-produto').value;
         const fMet = document.getElementById('dash-filtro-pagamento').value;
 
+        // Mapa de custos para cálculo do lucro
         const snapProd = await getDocs(collection(db, "produtos"));
         let alertas = '';
+        const mapaCustos = {};
         snapProd.forEach(doc => {
             const p = doc.data();
+            mapaCustos[p.nome] = p.preco_custo || 0;
             if(p.estoque <= 5) alertas += `<li style="color:red; font-weight:bold;">⚠️ ${p.nome}: ${p.estoque} un</li>`;
         });
         document.getElementById('dash-alertas').innerHTML = alertas;
 
         const snapV = await getDocs(collection(db, "vendas"));
-        let fat = 0, qtdHoje = 0;
+        let fatTotal = 0, custoTotal = 0, qtdHoje = 0;
         const hj = new Date().toLocaleDateString();
         const dadosProd = {}, dadosFin = { Dinheiro: 0, Pix: 0, Débito: 0, Crédito: 0 };
 
@@ -435,25 +444,31 @@
             
             if(dataInicioFiltro && dataV < dataInicioFiltro) return;
             if(dataFimFiltro && dataV > dataFimFiltro) return;
-            
             if(fMet !== 'todos' && v.metodo !== fMet) return;
 
             let vendaValida = false;
             v.itens.forEach(i => {
                 if(fProd === 'todos' || i.nome === fProd) {
                     vendaValida = true;
-                    dadosProd[i.nome] = (dadosProd[i.nome] || 0) + (i.qtd || 1);
+                    const qtd = i.qtd || 1;
+                    dadosProd[i.nome] = (dadosProd[i.nome] || 0) + qtd;
+                    
+                    // Cálculo Contábil
+                    custoTotal += (mapaCustos[i.nome] || 0) * qtd;
+                    fatTotal += (i.preco * qtd);
                 }
             });
 
             if(vendaValida) {
-                fat += v.total;
                 dadosFin[v.metodo] += v.total;
                 if(dataV.toLocaleDateString() === hj) qtdHoje++;
             }
         });
 
-        document.getElementById('dash-fatur').innerText = `R$ ${fat.toFixed(2).replace('.',',')}`;
+        // Atualiza a Interface
+        document.getElementById('dash-custo-total').innerText = `R$ ${custoTotal.toFixed(2).replace('.',',')}`;
+        document.getElementById('dash-fatur').innerText = `R$ ${fatTotal.toFixed(2).replace('.',',')}`;
+        document.getElementById('dash-lucro').innerText = `R$ ${(fatTotal - custoTotal).toFixed(2).replace('.',',')}`;
         document.getElementById('dash-hoje').innerText = qtdHoje;
 
         if(chartP) chartP.destroy();
@@ -631,7 +646,7 @@
                 }
             });
         });
-        baixarArquivo(csv, 'relatorio_vendas_contabil.csv');
+        baixarArquivo(csv, 'relatorio_vendas_contabil.Relatório_Vendas.csv');
     }
 
     const nome = sessionStorage.getItem('nomeUsuario') || 'Usuário';
