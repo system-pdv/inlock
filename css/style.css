@@ -1,0 +1,208 @@
+:root {
+    --primary-gradient: linear-gradient(135deg, #4f46e5, #06b6d4); /* Azul/Roxo moderno */
+    --danger-color: #ef4444;
+    --success-color: #22c55e;
+    --bg-color: #f8fafc;
+    --card-bg: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --input-border: #e2e8f0;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 15px;
+}
+
+/* Container principal (Simula o celular) */
+.app-container {
+    background-color: var(--card-bg);
+    width: 100%;
+    max-width: 410px;
+    min-height: 600px;
+    border-radius: 24px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    padding: 35px 25px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Headers */
+.app-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.app-header h2 {
+    color: var(--text-main);
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.app-header p {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+/* Formulários e Inputs modernos */
+.input-group {
+    margin-bottom: 18px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text-main);
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.input-group input, .input-group select {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid var(--input-border);
+    border-radius: 12px;
+    font-size: 15px;
+    color: var(--text-main);
+    background-color: #fdfdfd;
+    transition: all 0.2s ease;
+}
+
+.input-group input:focus, .input-group select:focus {
+    border-color: #4f46e5;
+    background-color: #fff;
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+}
+
+/* Botões Modernos */
+.btn {
+    width: 100%;
+    padding: 15px;
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s ease, opacity 0.2s ease;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn-logout {
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    color: var(--text-muted);
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    box-shadow: none;
+    width: auto;
+}
+
+/* Tela do Morador - Botão de Destravar Premium */
+.lock-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+    margin-top: 20px;
+}
+
+.btn-unlock {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: var(--primary-gradient);
+    border: 8px solid #eef2ff;
+    color: white;
+    font-size: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 10px 25px rgba(79, 70, 229, 0.35);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.btn-unlock:active {
+    transform: scale(0.92);
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
+}
+
+.lock-status {
+    margin-top: 25px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.lock-status.active {
+    color: var(--success-color);
+}
+
+/* Feedback de Erro/Sucesso */
+.status-msg {
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    text-align: center;
+    margin-top: 15px;
+    font-weight: 500;
+}
+.error { background-color: #fef2f2; color: var(--danger-color); }
+.success { background-color: #f0fdf4; color: var(--success-color); }
+.hide { display: none; }
+
+.card-apartamento {
+    background: #f8f9fa;
+    border-left: 5px solid #007bff;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.badge-moradores {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+.item-morador {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+.item-morador:last-child { border: none; }
+.acoes-morador button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    margin-left: 10px;
+}
